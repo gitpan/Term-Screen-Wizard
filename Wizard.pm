@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.30;
+  $VERSION=0.31;
 }
 
 sub add_screen {

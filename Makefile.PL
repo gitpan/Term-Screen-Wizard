@@ -6,7 +6,8 @@ WriteMakefile(
     'VERSION_FROM' => 'Wizard.pm', # finds $VERSION
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',	   # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',	   # e.g., '-I/usr/include/other' 
+    'INC'	=> '',	   # e.g., '-I/usr/include/other'
+    'PREREQ_PM' => { Term::Screen => 0, Term::Screen::ReadLine => 0 },
 );
 
 
