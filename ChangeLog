@@ -1,3 +1,10 @@
+0.45 -- Removed a bug. When the wizard was called with specific screens,
+        all variables were cleared. This has been corrected.
+     -- Removed function get_screen() (this has become an internal 
+        function).
+     -- Added a function set() to set keywords of a screen, or to set
+        values of prompts.
+
 0.41 -- Made some changes to the wizard() and get_keys() functions.
         Extended them with the possibility to ask a number of screens.
         This makes it possible to use a selection of all possible

@@ -86,6 +86,12 @@ $tst++;
 
 ##############################################################################
 
+#$scr1=$scr->get_screen("GETALLEN");
+#$scr1->{HEADER}="This header has been renewed";
+$scr->set("GETALLEN",HEADER,"dit is de header");
+$scr->set("GETALLEN","ADOUBLE",999.99);
+#$scr->set("GETALLEN","HANS",32232);
+
 $scr->puts("Only PROCES and GETALLEN")->getch();
 $result=$scr->wizard("PROCES","GETALLEN");
 print "ok $tst\n";
@@ -107,6 +113,7 @@ for $i (@array) {
     print "  $key=$val\n\r";
   }
 }
+
 
 %values=$scr->get_keys("GETALLEN");
 @array=( "GETALLEN" );

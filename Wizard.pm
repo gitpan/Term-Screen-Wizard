@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.41;
+  $VERSION=0.45;
 }
 
 sub add_screen {
@@ -57,22 +57,6 @@ sub del_screen {
 return 0;
 }
 
-sub get_screen {
-  my $self = shift;
-  my $name = shift;
-  my %screen;
-  my $scr;
-  my $arr=$self->{SCREENS};
-  my @array=@$arr;
-
-  foreach $scr (@array) {
-    if ($scr->{NAME} eq $name) {
-      return %$scr;
-    }
-  }
-
-return undef;
-}
 
 sub get_keys {
   my $self = shift;
@@ -159,8 +143,15 @@ sub wizard {
   }
 
   if ($what ne "cancel") {
+    my $scr_name;
     $what="finish";
-    foreach $scr (@array) {
+    foreach $scr_name (@screens) {
+      foreach my $a ( @array ) {
+        if ($scr_name eq $a->{NAME}) {
+	  $scr=$a;
+	  last;
+        }
+      }
       my $prompt;
       foreach $prompt (@{ $scr->{PROMPTS} }) {
 	$prompt->{VALUE}=$prompt->{NEWVALUE};
@@ -344,6 +335,52 @@ sub _display_screen {
   }
 }
 
+sub set {
+  my $self   = shift;
+  my $screen = shift;
+  my $scr    = $self->_get_screen($screen)
+	or die "unknown screen \"$screen\"";
+  my $id     = shift;
+
+  if (exists $scr->{$id}) {
+    $scr->{$id}=shift;
+  }
+  else {
+    my $found=0;
+    my $prompt;
+    my @prompts=@{$scr->{PROMPTS}};
+    foreach $prompt (@prompts) {
+      if ($prompt->{KEY} eq $id) {
+         $prompt->{VALUE}=shift;
+         $found=1;
+         last;
+      }
+    }
+    if (not $found) {
+      die "Can't find key <$id> in screen or prompts of screen\n";
+    }
+  }
+
+return $self; 
+}
+
+
+sub _get_screen {
+  my $self = shift;
+  my $name = shift;
+  my %screen;
+  my $scr;
+  my $arr=$self->{SCREENS};
+  my @array=@$arr;
+
+  foreach $scr (@array) {
+    if ($scr->{NAME} eq $name) {
+      return $scr;
+    }
+  }
+
+return undef;
+}
 
 =pod
 
@@ -499,11 +536,6 @@ Description of the interface.
    This function deletes a screen with given name from the list of screens.
 
 
- get_screen(<name>)
-
-   This function get's you a handle to a defined screen with given name.
-
-
  get_keys([screens])
 
    Optional arguments are screens to use. Example:
@@ -514,6 +546,20 @@ Description of the interface.
    This function gives you all the keys in a hash of a hash. Actually
    a hash of screens and each screen a hash of keys. See synopsis for
    usage.
+
+
+ set(SCREEN,KEY,VALUE)
+
+   To set key KEY of screen SCREEN equal to VALUE. Example:
+
+      $wizard->set("NUMBERS",HEADER,"This is the new header");
+  
+   sets the HEADER of screen NUMBERS to a new value.
+
+      $wizard->set("NUMBERS","ADOUBLE",999.999);
+
+   sets the prompt ADOUBLE of screen NUMBERS to 999.999
+
 
  wizard([screens])
 
