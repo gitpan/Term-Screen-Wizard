@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.46;
+  $VERSION=0.47;
 }
 
 sub add_screen {
@@ -318,9 +318,7 @@ sub _display_screen {
       if (exists $prompts[$i]->{VALIDATOR}) {
         my $expr=$prompts[$i]->{VALIDATOR};
         if (not $expr=~/::/) { $expr="::".$expr; }
-        #$self->at(20,0)->puts($expr)->getch();
-        $valid=&$expr($line);
-        #$self->at(21,0)->puts($valid)->getch();
+        $valid=&$expr($self,$line);
       }
       else {
         $valid=1;
@@ -566,6 +564,7 @@ Description of the interface.
 	   ]
 
      sub ValidateCCYYMMDD {
+       my $wizard=shift;
        my $line=shift;
        (...)
 

@@ -136,7 +136,9 @@ $tst++;
 ##############################################################################
 
 sub valdate {
-  $scr->at(21,0)->puts("in functie valdate");
+  my $wizard=shift;
+  my $line=shift;
+  $wizard->at(21,0)->puts("<$line>");
 return 1;
 }
 

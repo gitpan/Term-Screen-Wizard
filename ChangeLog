@@ -1,3 +1,7 @@
+0.47 -- Added an extra parameter to the VALIDATOR function, namely
+        $self. So the wizard is given to the validator function as
+        the first argument and the inputted line as the second.
+
 0.46 -- Removed a bug. When the user inputs a password, after the
         user leaves the field, the password isn't starred out.
      -- A validator function has been added to validate a field().
