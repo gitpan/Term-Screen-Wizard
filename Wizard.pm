@@ -9,7 +9,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.55;
+  $VERSION=0.56;
 }
 
 sub system {
@@ -34,6 +34,7 @@ sub add_screen {
     PREVIOUS  => "F3 - Previous",
     FINISH    => "Ctrl-Enter - Finish",
     NOFINISH  => 0,
+    HASPREVIOUS => 0,
     HELPTEXT  => undef,
     HELP      => "F1 - Help",
     ROW       => 2,
@@ -156,7 +157,7 @@ sub wizard {
     $footer="";
     if ($scr->{HELPTEXT}) { $footer.=$space.$scr->{HELP}; }
     $footer.=$space.$scr->{CANCEL};
-    if ($i  >  0   ) { $footer.=$space.$scr->{PREVIOUS}; }
+    if ($i  >  0  or $scr->{HASPREVIOUS} ) { $footer.=$space.$scr->{PREVIOUS}; }
     if ($i  < $N-1 or $scr->{NOFINISH} ) { $footer.=$space.$scr->{NEXT}; }
     if ($i == $N-1 and not $scr->{NOFINISH} ) { $footer.=$space.$scr->{FINISH}; }
     $scr->{FOOTER}=$footer;
@@ -164,6 +165,7 @@ sub wizard {
     $what=$self->_display_screen($scr);
 
     if ($what eq "previous") {
+      if ($i==0 and $scr->{HASPREVIOUS}) { last; }
       if ($i >0) { $i-=1; }
     }
     elsif ($what eq "next") {
@@ -177,7 +179,7 @@ sub wizard {
 
   if ($what ne "cancel") {
     my $scr_name;
-    $what="finish";
+    $what="finish" if ($what ne "previous");
     foreach $scr_name (@screens) {
       foreach my $a ( @array ) {
         if ($scr_name eq $a->{NAME}) {
@@ -189,10 +191,10 @@ sub wizard {
       my $prompt;
 
       if ($scr->{NOFINISH}) {
-        $what="next";
+        $what="next" if ($what ne "previous");
       }
       else {
-        $what="finish";
+        $what="finish" if ($what ne "previous");
       }
 
       foreach $prompt (@{ $scr->{PROMPTS} }) {

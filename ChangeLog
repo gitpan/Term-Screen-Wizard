@@ -1,3 +1,8 @@
+0.56 -- Addition. If HASPREVIOUS is defined for a screen (HASPREVIOUS => 1),
+        if this screen is the first screen to be displayed by the wizard and
+        the user touches F3, the wizard is closed, values are saved and
+        previous is returned.
+
 0.55 -- BUG fix. After a cancel the values of {NEWVALUE} for all used
         prompts should have been undef'ed. This has been done now.
      -- Added sub system() that executes commands (with system), and also

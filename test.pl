@@ -27,9 +27,10 @@ $scr->add_screen(
       NAME => "PROCES",
       HEADER => "Test $tst(1), TESTING THE WIZARD, enter some things here, please also test F1",
       CANCEL => "Esc - Annuleren",
-      NEXT   => "Ctrl-Enter - Volgende",
+      NEXT   => "Ctrl-Enter (F4) - Volgende",
       PREVIOUS => "F3 - Vorige",
       FINISH => "Ctrl-Enter - Klaar",
+      HASPREVIOUS => 1,
       PROMPTS => [
          { KEY => "PROCESID", PROMPT => "Proces Id", LEN=>32, VALUE=>"123456789.00.04" , ONLYVALID => "[a-zA-Z0-9.]*" },
          { KEY => "TYPE", PROMPT => "Intern of Extern Proces (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*", NOCOMMIT=>1 },
@@ -82,7 +83,7 @@ $scr->add_screen(
 );
 
 $result=$scr->wizard();
-print "ok $tst\n";
+print "\r\n\n\n\n$result, ok $tst\n";
 $tst++;
 
 ##############################################################################
@@ -98,7 +99,7 @@ $scr->set("GETALLEN",PROMPTS,ANINT,READONLY,1);
 
 $scr->puts("Only PROCES and GETALLEN")->getch();
 $result=$scr->wizard("PROCES","GETALLEN");
-print "ok $tst\n";
+print "\r\n\n\n\n$result, ok $tst\n";
 $tst++;
 
 ##############################################################################
@@ -130,7 +131,7 @@ for $i (@array) {
   }
 }
 
-print "ok $tst\n";
+print "\r\n\n\n\n$result, ok $tst\n";
 $tst++;
 
 ##############################################################################
