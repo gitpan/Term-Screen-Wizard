@@ -1,13 +1,13 @@
 package Term::Screen::Wizard;
 
-use strict;
+#use strict;
 use base qw(Term::Screen::ReadLine);
 use Term::Screen::ReadLine;
 
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.49;
+  $VERSION=0.51;
 }
 
 sub add_screen {

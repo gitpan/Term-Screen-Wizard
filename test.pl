@@ -138,7 +138,38 @@ $tst++;
 sub valdate {
   my $wizard=shift;
   my $line=shift;
-  $wizard->at(21,0)->puts("<$line>");
+  my $year=substr($line,0,4);
+  my $month=substr($line,4,2);
+  my $day=substr($line,6,2);
+  my $str="";
+  my @days=( 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 );
+
+  if (length $line eq 8) {
+    if ($year<1900) {
+      $str.="1900<=year ";
+    }
+    if ($month<1 or $month>12) {
+      $str.="01<=month<=12 ";
+    }
+    else {
+      if ($day<1 or $day>$days[$month]) {
+        $str.="01<=day<=".$days[$month];
+      }
+    }
+  }
+  else {
+    $str=" ";
+  }  
+
+  if ($str) {
+    my $w=$wizard->setstr(" ",length $str);
+    $wizard->at(20,0)->puts($str);
+    $wizard->at(21,0)->puts("Date format is CCYYMMDD!")->getch();
+    $wizard->at(20,0)->puts($w);
+    $wizard->at(21,0)->puts("                        ");
+    return 0;
+  }
+
 return 1;
 }
 
