@@ -5,7 +5,7 @@ use lib "/prj/dsnew/perlmods/lib/site_perl/current/aix";
 use lib "/prj/dsnew/perlmods/lib/current";
 use lib "./blib/lib";
 
-BEGIN { $| = 1; $Ntst=4; print "1..$Ntst\n"; $tst=1; }
+BEGIN { $| = 1; $Ntst=5; print "1..$Ntst\n"; $tst=1; }
 END { if ( $tst != $Ntst ) { print "not ok $tst\n"; } }
 
 ##############################################################################
@@ -81,7 +81,13 @@ $scr->add_screen(
 );
 
 $result=$scr->wizard();
+print "ok $tst\n";
+$tst++;
 
+##############################################################################
+
+$scr->puts("Only PROCES and GETALLEN")->getch();
+$result=$scr->wizard("PROCES","GETALLEN");
 print "ok $tst\n";
 $tst++;
 
@@ -92,7 +98,18 @@ print "Test $tst, printing the entered values in the wizard.\n";
 print "Wizard result was : '$result'\n";
 
 %values=$scr->get_keys();
-@array=( "PROCES", "X.400", "GETALLEN" );
+@array=( "PROCES", "X.400" );
+
+for $i (@array) {
+  print "\n$i\n\r";
+  for $key (keys % { $values{$i} }) {
+    my $val=$values{$i}{$key};
+    print "  $key=$val\n\r";
+  }
+}
+
+%values=$scr->get_keys("GETALLEN");
+@array=( "GETALLEN" );
 
 for $i (@array) {
   print "\n$i\n\r";

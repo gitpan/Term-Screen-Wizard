@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.32;
+  $VERSION=0.41;
 }
 
 sub add_screen {
@@ -78,8 +78,18 @@ sub get_keys {
   my $self = shift;
   my $scr;
   my %values;
+  my %screens;
+  my $screens;
+
+  foreach  $scr (@_) { $screens{$scr}=1;$screens+=1; }
+  if ($screens == 0) {my $a;
+    foreach $a (@{ $self->{SCREENS} }) {
+      $screens{$a->{NAME}}=1;
+    }
+  }
 
   for $scr (@{ $self->{SCREENS} }) {
+    next if (not exists $screens{$scr->{NAME}});
     my $prompt;
     my $name=$scr->{NAME};
     for $prompt (@{ $scr->{PROMPTS} }) {
@@ -96,14 +106,35 @@ sub wizard {
   my @array=@$arr;
   my $scr;
   my $i;
-  my $N=scalar @array;
+  my $N;
   my $what;
   my $footer;
   my $space=chr(32).chr(32).chr(32);
+  my $scr_name;
+
+  my @screens;
+  $N=0;
+
+  foreach $i (@_) {
+    push @screens,$i;
+  }
+  $N=scalar @screens;
+  if ($N == 0) {my $a;
+    foreach $a (@array) {
+      push @screens,$a->{NAME};
+    }
+  }
+  $N=scalar @screens;
 
   $i=0;
   while ($i < $N) {
-    $scr=$array[$i];
+    $scr_name=$screens[$i];
+    foreach my $a ( @array ) {
+      if ($scr_name eq $a->{NAME}) {
+	$scr=$a;
+	last;
+      }
+    }
 
     $footer="";
     if ($scr->{HELPTEXT}) { $footer.=$space.$scr->{HELP}; }
@@ -116,7 +147,7 @@ sub wizard {
     $what=$self->_display_screen($scr);
 
     if ($what eq "previous") {
-      $i-- unless $i==0;
+      $i-- unless $i=0;
     }
     elsif ($what eq "next") {
       $i++;
@@ -128,14 +159,20 @@ sub wizard {
   }
 
   if ($what ne "cancel") {
+    $what="finish";
     foreach $scr (@array) {
       my $prompt;
       foreach $prompt (@{ $scr->{PROMPTS} }) {
 	$prompt->{VALUE}=$prompt->{NEWVALUE};
 	$prompt->{NEWVALUE}=undef;
+	if ($prompt->{NOFINISH}) {
+	  $what="next";
+	}
+	else {
+	  $what="finish";
+	}
       }
     }
-    $what="finish";
   }
 
 return $what;
@@ -385,6 +422,8 @@ Term::Screen::Wizard - A wizard on your terminal...
 
 	$scr->wizard();
 
+	$scr->wizard("PROCES","GETALLEN");
+
 	$scr->clrscr();
 
 	%values=$scr->get_keys();
@@ -398,14 +437,16 @@ Term::Screen::Wizard - A wizard on your terminal...
 	  }
 	}
 
+	%values=$scr->get_keys("X.400","PROCES");
+
 	exit;
 
 =head1 DESCRIPTION
 
-This is a module to have a Wizard on a Terminal. It inherits from 
+This is a module to have a Wizard on a Terminal. It inherits from
 Term::Screen::ReadLine. The module provides some functions to add
 screens. The result is a Hash with keys that have the (validated)
-values that the used inputted on the different screens. 
+values that the used inputted on the different screens.
 
 =head1 USAGE
 
@@ -463,15 +504,31 @@ Description of the interface.
    This function get's you a handle to a defined screen with given name.
 
 
- get_keys()
+ get_keys([screens])
+
+   Optional arguments are screens to use. Example:
+
+      %values=$a->get_keys()			-> gives all screens.
+      %values=$a->get_keys("PROCESS","NUMBERS") -> gives only screens PROCESS and NUMBERS.
 
    This function gives you all the keys in a hash of a hash. Actually
    a hash of screens and each screen a hash of keys. See synopsis for
    usage.
 
- wizard()
+ wizard([screens])
+
+    Optional arguments are screens to use. Example:
+
+      $result=$a->wizard()	    -> processes all screens.
+      $result=$a->wizard("PROCESS") -> processes only screen PROCESS.
 
    This function starts the wizard.
+   Possible results are:
+
+	    ="cancel",	the user canceled the wizard; values are not updated.
+	    ="finish",	the user finished the wizard.
+	    ="next",	the user finished the wizard and the last prompt
+			has option "NOFINISH".
 
 =head1 AUTHOR
 
