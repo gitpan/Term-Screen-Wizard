@@ -1,3 +1,35 @@
+0.53 -- Detected a bug in Term::Screen v1.01 (for solaris). Waiting
+        for a patch. 
+        
+Line 290-297
+
+  if ($r == 0 || $c == 0) # try getting rows and cols some other way
+    {
+       if (exists $ENV{'LINES'}) { $r = $ENV{'LINES'}; }
+       else { $r = $this->{TERM}{'_li'}; } # this is often wrong
+##!!
+       if (exists $ENV{'COLUMNS'}) { $r = $ENV{'COLUMNS'}; }
+       else { $r = $this->{TERM}{'_co'}; }
+##!!
+    }
+
+should read
+
+  if ($r == 0 || $c == 0) # try getting rows and cols some other way
+    {
+       if (exists $ENV{'LINES'}) { $r = $ENV{'LINES'}; }
+       else { $r = $this->{TERM}{'_li'}; } # this is often wrong
+###!!
+       if (exists $ENV{'COLUMNS'}) { $c = $ENV{'COLUMNS'}; }
+       else { $c = $this->{TERM}{'_co'}; }
+###!!
+    }
+    
+        As solaris doesn't support stty -size, and the Term::Screen
+        v1.01 code has a little bug here, Term::Sceen::Wizard 0.52
+        does not work. Term::Screen::Wizard 0.53 dies on COLS and ROWS
+        having a wrong value.
+
 0.52 -- use strict in again, no strict 'refs' added. Thanks to Andreas
         Marcel Riechert.
 

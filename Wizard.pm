@@ -9,7 +9,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.52;
+  $VERSION=0.53;
 }
 
 sub add_screen {
@@ -101,6 +101,13 @@ sub wizard {
 
   my @screens;
   $N=0;
+
+  if ($self->{COLS} <= 0) {
+    die "Term::Screen::COLS <= 0, please set environment variable \$COLUMNS\n";
+  }
+  if ($self->{ROWS} <= 0) {
+    die "Term::Screen::ROWS <= 0, please set environment variable \$LINES\n";
+  }
 
   foreach $i (@_) {
     push @screens,$i;
