@@ -1,28 +1,31 @@
-#
-# TCtest.pl
-#
-# test program to exercise the screen contol module
-#
-# by Mark Kaehny 1995
-# this file is available under the same terms as the perl language
-# distribution. See the Artistic License.
-#
+#!/usr/bin/perl
 
 use lib "/prj/dsnew/perlmods/lib/site_perl/current";
 use lib "/prj/dsnew/perlmods/lib/site_perl/current/aix";
 use lib "/prj/dsnew/perlmods/lib/current";
-
 use lib "./blib/lib";
+
+BEGIN { $| = 1; $Ntst=4; print "1..$Ntst\n"; $tst=1; }
+END { if ( $tst != $Ntst ) { print "not ok $tst\n"; } }
+
+##############################################################################
+
+print "Test $tst, loading the module and allocating screen\n";
 
 use Term::Screen::Wizard;
 
 $scr = new Term::Screen::Wizard;
 
+print "ok $tst\n";
+$tst++;
+
+##############################################################################
+
 $scr->clrscr();
 
 $scr->add_screen(
       NAME => "PROCES",
-      HEADER => "Voer het nieuwe proces id in",
+      HEADER => "Test $tst(1), TESTING THE WIZARD, enter some things here, please also test F1",
       CANCEL => "Esc - Annuleren",
       NEXT   => "Ctrl-Enter - Volgende",
       PREVIOUS => "F3 - Vorige",
@@ -30,9 +33,12 @@ $scr->add_screen(
       PROMPTS => [
          { KEY => "PROCESID", PROMPT => "Proces Id", LEN=>32, VALUE=>"123456789.00.04" , ONLYVALID => "[a-zA-Z0-9.]*" },
          { KEY => "TYPE", PROMPT => "Intern of Extern Proces (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*" },
-         { KEY => "OMSCHRIJVING", PROMPT => "Beschrijving Proces", LEN=>75 }
+         { KEY => "OMSCHRIJVING", PROMPT => "Beschrijving Proces", LEN=>75 },
+         { KEY => "PASSWORD", PROMPT => "Enter a password", LEN=>14, PASSWORD=>1 }
                 ],
       HELPTEXT => "\n\n\n".
+              "  Don't worry, it's dutch.\n".
+              "\n".
               "  In dit scherm kan een nieuw proces Id worden opgevoerd\n".
               "\n".
               "  ProcesId      - is het ingevoerde Proces Id\n".
@@ -42,7 +48,7 @@ $scr->add_screen(
 
 $scr->add_screen(
    NAME => "X.400",,
-   HEADER => "Voer het X.400 adres in",
+   HEADER => "Test $tst(2), TESTING THE WIZARD, enter some things here, please also test F1",
    CANCEL => "Esc - Annuleren",
    NEXT   => "Ctrl-Enter - Volgende",
    PREVIOUS => "F3 - Vorige",
@@ -62,7 +68,7 @@ $scr->add_screen(
 
 $scr->add_screen(
    NAME => "GETALLEN",,
-   HEADER => "Voer getallen in",
+   HEADER => "Test $tst(3), TESTING THE WIZARD, enter some things here, please also test F1",
    CANCEL => "Esc - Annuleren",
    NEXT   => "Ctrl-Enter - Volgende",
    PREVIOUS => "F3 - Vorige",
@@ -74,9 +80,16 @@ $scr->add_screen(
    ],
 );
 
-$scr->wizard();
+$result=$scr->wizard();
+
+print "ok $tst\n";
+$tst++;
+
+##############################################################################
 
 $scr->clrscr();
+print "Test $tst, printing the entered values in the wizard.\n";
+print "Wizard result was : '$result'\n";
 
 %values=$scr->get_keys();
 @array=( "PROCES", "X.400", "GETALLEN" );
@@ -88,6 +101,11 @@ for $i (@array) {
     print "  $key=$val\n\r";
   }
 }
+
+print "ok $tst\n";
+$tst++;
+
+##############################################################################
 
 exit;
 

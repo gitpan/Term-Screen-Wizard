@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.20;
+  $VERSION=0.30;
 }
 
 sub add_screen {
@@ -159,14 +159,14 @@ sub _display_screen {
   my %keys;
 
 
-  %keys = ( "esc"       => 1,
-            "ctrl-enter" => 1,
-            "pgdn"       => 1,
-            "pgup"       => 1,
-            "k3"         => 1,
-            "k4"         => 1,
-            "k1"         => 2,
-           );
+  %keys = ( "esc"	=> 1,
+	    "ctrl-enter" => 1,
+	    "pgdn"	 => 1,
+	    "pgup"	 => 1,
+	    "k3"	 => 1,
+	    "k4"	 => 1,
+	    "k1"	 => 2,
+	   );
 
 
   {my $i;
@@ -192,7 +192,7 @@ sub _display_screen {
     }
 
     if ($key eq "k1") {
-      $self->at(3,0)->puts($scr->{HELP});
+      $self->at(3,0)->puts($scr->{HELPTEXT});
       $self->getch();
       $key="";
       next;
@@ -209,6 +209,8 @@ sub _display_screen {
     }
 
     $promptlen++;
+    $displen=$self->{COLS}-$promptlen-3;     # see increment of promptlen below
+
     $i=3;
     foreach $prompt ( @prompts	) {
       if (not defined $prompt->{NEWVALUE}) {
@@ -218,12 +220,22 @@ sub _display_screen {
       else {
 	$val=$prompt->{NEWVALUE};
       }
+
+      my $L=length $val;
+
+      if ($prompt->{PASSWORD}) {
+	 $val="";
+	 for(1..$L) { $val.="*"; }
+      }
+
+      if ($L>$displen) { $L=$displen; }
+      $val=substr($val,0,$L);
+
       $self->at($i,$promptlen)->puts(": $val");
       $i++;
     }
 
     $promptlen+=2;
-    $displen=$self->{COLS}-$promptlen;
 
     $i=0;
     while (not defined $keys{$key}) {
@@ -249,7 +261,20 @@ sub _display_screen {
 			    EXITS => { "pgup" => "pgup", "pgdn" => "pgdn", "k1" => "k1", "k3" => "k3", "k4" => "k4" },
 			    ONLYVALID => $only,
 			    CONVERT => $convert,
+			    PASSWORD => $prompts[$i]->{PASSWORD},
 			   );
+
+      {my $L=length $line;
+       my $val=$line;
+	 if ($L>$displen) { $L=$displen; }
+	 if ($prompts[$i]->{PASSWORD}) {
+	   for(1..$L) {
+	     $val.="*";
+	   }
+	 }
+	 $val=substr($val,0,$L);
+	 $self->at($i+3,$promptlen)->puts($val);
+      }
 
       $prompts[$i]->{NEWVALUE}=$line;
       $key=$self->lastkey();
@@ -293,86 +318,87 @@ Term::Screen::Wizard - A wizard on your terminal...
 
 	use Term::Screen::Wizard;
 
-        $scr = new Term::Screen::Wizard;
+	$scr = new Term::Screen::Wizard;
 
-        $scr->clrscr();
+	$scr->clrscr();
 
-        $scr->add_screen(
-              NAME => "PROCES",
-              HEADER => "Give me the new process id",
-              CANCEL => "Esc - Annuleren",
-              NEXT   => "Ctrl-Enter - Volgende",
-              PREVIOUS => "F3 - Vorige",
-              FINISH => "Ctrl-Enter - Klaar",
-              PROMPTS => [
-                 { KEY => "PROCESID", PROMPT => "Proces Id", LEN=>32, VALUE=>"123456789.00.04" , ONLYVALID => "[a-zA-Z0-9.]*" },
-                 { KEY => "TYPE", PROMPT => "Intern or Extern Process (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*" },
-                 { KEY => "OMSCHRIJVING", PROMPT => "Description of Proces", LEN=>75 }
-                        ],
+	$scr->add_screen(
+	      NAME => "PROCES",
+	      HEADER => "Give me the new process id",
+	      CANCEL => "Esc - Annuleren",
+	      NEXT   => "Ctrl-Enter - Volgende",
+	      PREVIOUS => "F3 - Vorige",
+	      FINISH => "Ctrl-Enter - Klaar",
+	      PROMPTS => [
+		 { KEY => "PROCESID", PROMPT => "Proces Id", LEN=>32, VALUE=>"123456789.00.04" , ONLYVALID => "[a-zA-Z0-9.]*" },
+		 { KEY => "TYPE", PROMPT => "Intern or Extern Process (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*" },
+		 { KEY => "OMSCHRIJVING", PROMPT => "Description of Proces", LEN=>75 },
+		 { KEY => "PASSWORD", PROMPT => "Enter a password", LEN=>14, PASSWORD=>1 }
+			],
 
 #
 # OK This helptext is in Dutch, but it's clear how it works isn't it?
 #
-              HELPTEXT => "\n\n\n".
-                      "  In dit scherm kan een nieuw proces Id worden opgevoerd\n".
-                      "\n".
-                      "  ProcesId      - is het ingevoerde Proces Id\n".
-                      "  Intern/Extern - is het proces belastingdienst intern of niet?\n".
-                      "  Omschrijving  - Een korte omschrijving van het proces.\n"
-             );
+	      HELPTEXT => "\n\n\n".
+		      "  In dit scherm kan een nieuw proces Id worden opgevoerd\n".
+		      "\n".
+		      "  ProcesId      - is het ingevoerde Proces Id\n".
+		      "  Intern/Extern - is het proces belastingdienst intern of niet?\n".
+		      "  Omschrijving  - Een korte omschrijving van het proces.\n"
+	     );
 
-        $scr->add_screen(
-           NAME => "X.400",,
-           HEADER => "Voer het X.400 adres in",
+	$scr->add_screen(
+	   NAME => "X.400",,
+	   HEADER => "Voer het X.400 adres in",
 #
 # So the point is you can change the Wizard 'buttons'.
 #
-           CANCEL => "Esc - Annuleren",
-           NEXT   => "Ctrl-Enter - Volgende",
-           PREVIOUS => "F3 - Vorige",
-           FINISH => "Ctrl-Enter - Klaar",
-           PROMPTS => [
-             { KEY => "COUNTRY", PROMPT => "COUNTRY", LEN => 2, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "AMDM",    PROMPT => "AMDM",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "PRDM",    PROMPT => "PRDM",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "ORG",     PROMPT => "ORGANISATION",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "OU1",     PROMPT => "UNIT1",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "OU2",     PROMPT => "UNIT2",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-             { KEY => "OU3",     PROMPT => "UNIT3",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
-           ],
-           HELPTEXT => "\n\n\n".
-                   "  In dit scherm kan een standaard X.400 adres worden ingevoerd voor een ProcesId",
-        );
-        
-        $scr->add_screen(
-           NAME => "GETALLEN",,
-           HEADER => "Voer getallen in",
-           CANCEL => "Esc - Annuleren",
-           NEXT   => "Ctrl-Enter - Volgende",
-           PREVIOUS => "F3 - Vorige",
-           FINISH => "Ctrl-Enter - Klaar",
-           PROMPTS => [
-             { KEY => "ANINT",     PROMPT => "INT",     LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
-             { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
-           ],
-        );
-        
-        $scr->wizard();
+	   CANCEL => "Esc - Annuleren",
+	   NEXT   => "Ctrl-Enter - Volgende",
+	   PREVIOUS => "F3 - Vorige",
+	   FINISH => "Ctrl-Enter - Klaar",
+	   PROMPTS => [
+	     { KEY => "COUNTRY", PROMPT => "COUNTRY", LEN => 2, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "AMDM",	 PROMPT => "AMDM",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "PRDM",	 PROMPT => "PRDM",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "ORG",	 PROMPT => "ORGANISATION",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "OU1",	 PROMPT => "UNIT1",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "OU2",	 PROMPT => "UNIT2",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	     { KEY => "OU3",	 PROMPT => "UNIT3",    LEN => 16, CONVERT => "up", ONLYVALID => "[^/]*" },
+	   ],
+	   HELPTEXT => "\n\n\n".
+		   "  In dit scherm kan een standaard X.400 adres worden ingevoerd voor een ProcesId",
+	);
 
-        $scr->clrscr();
-        
-        %values=$scr->get_keys();
-        @array=( "PROCES", "X.400", "GETALLEN" );
-        
-        for $i (@array) {
-          print "\n$i\n\r";
-          for $key (keys % { $values{$i} }) {
-            my $val=$values{$i}{$key};
-            print "  $key=$val\n\r";
-          }
-        }
+	$scr->add_screen(
+	   NAME => "GETALLEN",,
+	   HEADER => "Voer getallen in",
+	   CANCEL => "Esc - Annuleren",
+	   NEXT   => "Ctrl-Enter - Volgende",
+	   PREVIOUS => "F3 - Vorige",
+	   FINISH => "Ctrl-Enter - Klaar",
+	   PROMPTS => [
+	     { KEY => "ANINT",	   PROMPT => "INT",	LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
+	     { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
+	   ],
+	);
 
-        exit;
+	$scr->wizard();
+
+	$scr->clrscr();
+
+	%values=$scr->get_keys();
+	@array=( "PROCES", "X.400", "GETALLEN" );
+
+	for $i (@array) {
+	  print "\n$i\n\r";
+	  for $key (keys % { $values{$i} }) {
+	    my $val=$values{$i}{$key};
+	    print "  $key=$val\n\r";
+	  }
+	}
+
+	exit;
 
 =head1 DESCRIPTION
 
@@ -385,7 +411,7 @@ values that the used inputted on the different screens.
 
 Description of the interface.
 
-add_screen(
+ add_screen(
     NAME      => <name of screen>,
     HEADER    => <header to put on top of screen>,
     CANCEL    => <text of cancel 'button', defaults to 'Esc - Cancel'>,
@@ -395,57 +421,57 @@ add_screen(
     HELP      => <text of help 'button', defaults to 'F1 - Help'>,
     HELPTEXT  => <text to put on your helpscreen>
     NOFINISH  => <1/0 - Inidicates that this wizard is/is not (1/0) part
-                        of an ongoing 'wizard sequence'>
+			of an ongoing 'wizard sequence'>
     PROMPTS   => <array of fields to input>
-)
+ )
 
-  This function add's a screen to the list of screens that the wizards goes
-  through sequentially. If NOFINISH==1, the finish 'button' is not used. Use
-  this, if the last screen of this wizard is not actually the last screen
-  of a sequence of wizards. 
+   This function add's a screen to the list of screens that the wizards goes
+   through sequentially. If NOFINISH==1, the finish 'button' is not used. Use
+   this, if the last screen of this wizard is not actually the last screen
+   of a sequence of wizards.
 
-  For instance, if you need to go one way or the other after the first screen,
-  you provide a wizard with one screen and no FINISH button. After that you
-  call the next sequence of screens.
+   For instance, if you need to go one way or the other after the first screen,
+   you provide a wizard with one screen and no FINISH button. After that you
+   call the next sequence of screens.
 
-           PROMPTS => [
-             { KEY => "ANINT",     PROMPT => "INT",     LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
-             { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
-           ]
+	   PROMPTS => [
+	     { KEY => "ANINT",	   PROMPT => "INT",	LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
+	     { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
+	   ]
 
-  Note the entries in PROMPTS : 
+  Note the entries in PROMPTS :
 
-     KEY         is the hash key with what you can access the field.
-     PROMPT      is the prompt to use for the field.
-     LEN         is the maximum length of the field.
-     CONVERT     'up' or 'lo' for uppercase or lowercase. If not used
-                 it won't convert.
-     ONLYVALID   is a regex to use for validation. Note: validation is
-                 done *before* conversion! If not used, no validation is
-                 done.
-     VALUE       a default value to use. This value will change if the
-                 wizard is used.
-
-
-del_screen(<name>)
-
-  This function deletes a screen with given name from the list of screens.
+     KEY	 is the hash key with what you can access the field.
+     PROMPT	 is the prompt to use for the field.
+     LEN	 is the maximum length of the field.
+     CONVERT	 'up' or 'lo' for uppercase or lowercase. If not used
+		 it won't convert.
+     ONLYVALID	 is a regex to use for validation. Note: validation is
+		 done *before* conversion! If not used, no validation is
+		 done.
+     VALUE	 a default value to use. This value will change if the
+		 wizard is used.
 
 
-get_screen(<name>)
+ del_screen(<name>)
 
-  This function get's you a handle to a defined screen with given name.
+   This function deletes a screen with given name from the list of screens.
 
 
-get_keys()
+ get_screen(<name>)
 
-  This function gives you all the keys in a hash of a hash. Actually
-  a hash of screens and each screen a hash of keys. See synopsis for
-  usage.
+   This function get's you a handle to a defined screen with given name.
 
-wizard()
-  
-  This function starts the wizard.
+
+ get_keys()
+
+   This function gives you all the keys in a hash of a hash. Actually
+   a hash of screens and each screen a hash of keys. See synopsis for
+   usage.
+
+ wizard()
+
+   This function starts the wizard.
 
 =head1 AUTHOR
 

@@ -1,0 +1,8 @@
+0.30 -- Structured the tests in test.pl
+     -- Debugged Wizard.pm according to test results.
+     -- Extended Makefile.PL to have dependencies.
+     -- Added ChangeLog
+     -- Added MANIFEST
+
+0.20 -- Initial upload
+
