@@ -1,4 +1,7 @@
-0.51 -- As I don't know how to remove 'strict refs', I commented out 
+0.52 -- use strict in again, no strict 'refs' added. Thanks to Andreas
+        Marcel Riechert.
+
+0.51 -- As I don't know how to remove 'strict refs', I commented out
         use strict.
         
 0.49 -- Fixed a bug. Makefile.PL should now require Term::Screen::ReadLine
