@@ -7,7 +7,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.47;
+  $VERSION=0.48;
 }
 
 sub add_screen {
@@ -329,7 +329,8 @@ sub _display_screen {
         $key=$self->lastkey();
       }
       else {
-        $key="";
+        $key=$self->lastkey();
+        if ($key ne "k1" and $key ne "esc" and $key ne "k3") { $key=""; }
       }
 
       if ($key eq "tab" or $key eq "enter" or $key eq "kd") {

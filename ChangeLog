@@ -1,3 +1,6 @@
+0.48 -- Fixed a bug. The Esc, F1, F3 (previous screen) key should work; 
+        also when the validator function returns 'false'.
+
 0.47 -- Added an extra parameter to the VALIDATOR function, namely
         $self. So the wizard is given to the validator function as
         the first argument and the inputted line as the second.
