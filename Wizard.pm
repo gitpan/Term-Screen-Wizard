@@ -9,7 +9,18 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.54;
+  $VERSION=0.55;
+}
+
+sub system {
+  my $self=shift;
+  my $cmd;
+  foreach my $f (@_) {
+    $cmd.="$f ";
+  }
+  system "stty -raw echo";
+  system @_;
+  system "stty raw -echo";
 }
 
 sub add_screen {
@@ -185,8 +196,20 @@ sub wizard {
       }
 
       foreach $prompt (@{ $scr->{PROMPTS} }) {
-        #$self->at(22,0)->puts($prompt->{KEY})->puts(" - ")->puts($prompt->{NEWVALUE})->getch();
 	$prompt->{VALUE}=$prompt->{NEWVALUE};
+	$prompt->{NEWVALUE}=undef;
+      }
+    }
+  }
+  else {
+    foreach $scr_name (@screens) {
+      foreach my $a ( @array ) {
+        if ($scr_name eq $a->{NAME}) {
+	  $scr=$a;
+	  last;
+        }
+      }
+      foreach my $prompt (@{ $scr->{PROMPTS} }) {
 	$prompt->{NEWVALUE}=undef;
       }
     }

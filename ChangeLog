@@ -1,3 +1,8 @@
+0.55 -- BUG fix. After a cancel the values of {NEWVALUE} for all used
+        prompts should have been undef'ed. This has been done now.
+     -- Added sub system() that executes commands (with system), and also
+        resets the terminal to normal input/output.
+
 0.54 -- Hmm, I've been really hacking here. Added a possibility to
         have fields not been used (NIL option) for input, the cursor
         won't touch these fields. Added a field an option READY also, 

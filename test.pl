@@ -173,5 +173,8 @@ sub valdate {
 return 1;
 }
 
+$scr->system("ksh -e echo hoi!");
+$scr->system("more Wizard.pm");
+
 exit;
 
