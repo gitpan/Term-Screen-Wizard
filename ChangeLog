@@ -1,3 +1,5 @@
+0.32 -- Converted all files to UNIX format.
+
 0.31 -- Forgot to include the dependencies in Makefile.PL, added them.
 
 0.30 -- Structured the tests in test.pl
