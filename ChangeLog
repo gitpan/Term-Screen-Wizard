@@ -1,3 +1,14 @@
+0.54 -- Hmm, I've been really hacking here. Added a possibility to
+        have fields not been used (NIL option) for input, the cursor
+        won't touch these fields. Added a field an option READY also, 
+        to let the wizard take the next screen if this field is passed.
+        
+        You can use this with option (READY) together with option 
+        NOCOMMIT to have a sort of menu.
+        
+        I think the code should now be unscrambled sometime. No time
+        for that though.
+
 0.53 -- Detected a bug in Term::Screen v1.01 (for solaris). Waiting
         for a patch. 
         

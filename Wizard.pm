@@ -9,7 +9,7 @@ use Term::Screen::ReadLine;
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.53;
+  $VERSION=0.54;
 }
 
 sub add_screen {
@@ -34,6 +34,12 @@ sub add_screen {
 
   my $arr=$self->{SCREENS};
   my @array;
+
+  #$self->del_screen($args->{NAME});
+  foreach my $scr (@{ $self->{SCREENS} }) {
+     return 0 if ($scr->{NAME} eq $args->{NAME});
+  }
+
   if ($arr) { @array=@$arr; }
   push @array, $args;
   $self->{SCREENS}=\@array;
@@ -48,15 +54,20 @@ sub del_screen {
   my $scr;
   my $arr=$self->{SCREENS};
   my @array=@$arr;
+  my @narray=();
+  my $retval=0;
 
-  $i=0;
+  $self->{SCREENS}=();
+
   foreach $scr (@array) {
     if ($scr->{NAME} eq $name) {
-      delete $self->{SCREENS}->{$i};
-      return 1;
+      $retval=1;
     }
-    $i++;
+    else {
+      push @narray,$scr;
+    }
   }
+  $self->{SCREENS}=\@narray;
 return 0;
 }
 
@@ -80,6 +91,7 @@ sub get_keys {
     my $prompt;
     my $name=$scr->{NAME};
     for $prompt (@{ $scr->{PROMPTS} }) {
+       #$self->at(22,0)->puts($prompt->{KEY})->puts(" - ")->puts($prompt->{NEWVALUE})->getch();
       $values{$name}{$prompt->{KEY}}=$prompt->{VALUE};
     }
   }
@@ -173,6 +185,7 @@ sub wizard {
       }
 
       foreach $prompt (@{ $scr->{PROMPTS} }) {
+        #$self->at(22,0)->puts($prompt->{KEY})->puts(" - ")->puts($prompt->{NEWVALUE})->getch();
 	$prompt->{VALUE}=$prompt->{NEWVALUE};
 	$prompt->{NEWVALUE}=undef;
       }
@@ -245,7 +258,12 @@ sub _display_screen {
     $i=3;
     foreach $prompt ( @prompts ) {
       my $s=$prompt->{PROMPT};
-      if (length $s > $promptlen) { $promptlen=length $s; }
+      if (($prompt->{KEY} ne "NIL") and (not $prompt->{NIL})) {
+        if (length $s > $promptlen) { $promptlen=length $s; }
+      }
+      else {
+        $prompt->{NIL}=1;
+      }
       $self->at($i,0)->puts($prompt->{PROMPT});
       $i++;
     }
@@ -272,13 +290,20 @@ sub _display_screen {
       if ($L>$displen) { $L=$displen; }
       $val=substr($val,0,$L);
 
-      $self->at($i,$promptlen)->puts(": $val");
+      if (not $prompt->{NIL}) {
+        $self->at($i,$promptlen)->puts(": $val");
+      }
       $i++;
     }
 
     $promptlen+=2;
 
     $i=0;
+    while (($i < $N) and $prompts[$i]->{NIL}) {
+      $i+=1;
+    }
+    #print "$i\n";getc();
+
     while (not defined $keys{$key}) {
 
       if ($prompts[$i]->{ONLYVALID}) {
@@ -296,11 +321,9 @@ sub _display_screen {
       }
 
       my $readonly=$scr->{READONLY};
-      if (not defined $readonly) { 
+      if (not defined $readonly) {
         $readonly=$prompts[$i]->{READONLY};
       }
-
-      #$self->at($i+3,$promptlen)->puts($prompts[$i]->{NOCOMMIT})->getch();
 
       $line=$self->readline(ROW => $i+3, COL => $promptlen,
 			    LEN => $prompts[$i]->{LEN},
@@ -324,7 +347,7 @@ sub _display_screen {
 	 $self->at($i+3,$promptlen)->puts($val);
       }
 
-      if (exists $prompts[$i]->{VALIDATOR}) {
+      if ((exists $prompts[$i]->{VALIDATOR}) and ($self->lastkey() ne "esc")) {
         my $expr=$prompts[$i]->{VALIDATOR};
         if (not $expr=~/::/) { $expr="::".$expr; }
         $valid=&$expr($self,$line);
@@ -332,10 +355,11 @@ sub _display_screen {
       else {
         $valid=1;
       }
-  
+
       if ($valid) {
         $prompts[$i]->{NEWVALUE}=$line;
         $key=$self->lastkey();
+        #$self->at(22,0)->puts(" $key - $line")->getch();
       }
       else {
         $key=$self->lastkey();
@@ -343,7 +367,15 @@ sub _display_screen {
       }
 
       if ($key eq "tab" or $key eq "enter" or $key eq "kd") {
-	$i+=1;
+        if ($prompts[$i]->{READY} and ((length $line) gt 0)) {
+           $i=$N;
+        }
+        else {
+	  $i+=1;
+          while ($prompts[$i]->{NIL} and ($i < $N)) {
+            $i++;
+          }
+        }
 	if ($i >= $N) {
 	  $i=0;
 	  if ($key eq "enter") {
@@ -353,7 +385,14 @@ sub _display_screen {
       }
       elsif ( $key eq "ku" ) {
 	$i--;
-	if ($i < 0 ) { $i=$N-1; }
+        while ($prompts[$i]->{NIL} and ($i >= 0)) {
+          $i--;
+        }
+	if ($i < 0 ) { $i=$N-1; 
+          while ($prompts[$i]->{NIL} and ($i >= 0)) {
+            $i--;
+          }
+        }
       }
 
     }
@@ -415,7 +454,54 @@ sub set {
     }
   }
 
-return $self; 
+return $self;
+}
+
+sub get {
+  my $self   = shift;
+  my $screen = shift;
+  my $scr    = $self->_get_screen($screen)
+	or die "unknown screen \"$screen\"";
+  my $id     = shift;
+
+  if (exists $scr->{$id}) {
+    if ($id eq "PROMPTS") {
+     my $key=shift;
+     my $found=0;
+     my @prompts=@{$scr->{PROMPTS}};
+     my $prompt;
+      foreach $prompt (@prompts) {
+        if ($prompt->{KEY} eq $key) {
+         my $id=shift;
+          #$self->at(17,0)->puts("$key");
+          #$self->at(18,0)->puts("$id=")->puts($prompt->{$id})->getch();
+          $found=1;
+          return $prompt->{$id};
+        }
+      }
+      if (not $found) {
+        die "Can't find key <$key> in prompts of screen\n";
+      }
+    }
+    else {
+      return $scr->{$id};
+    }
+  }
+  else {
+    my $found=0;
+    my $prompt;
+    my @prompts=@{$scr->{PROMPTS}};
+    foreach $prompt (@prompts) {
+      if ($prompt->{KEY} eq $id) {
+         return $prompt->{VALUE};
+         $found=1;
+         last;
+      }
+    }
+    if (not $found) {
+      die "Can't find key <$id> in screen or prompts of screen\n";
+    }
+  }
 }
 
 
@@ -596,6 +682,9 @@ Description of the interface.
      VALIDATOR   a validator sub to validate a line of input, after it has
                  been inputted.
      READONLY    Set this prompt readonly.
+     NOCOMMIT    defined/undefined ==> This field will not ask for a return,
+                 works great for choices (LEN=1).
+     READY       If this field has had it's input, go to the next screen.
 
 
  del_screen(<name>)
@@ -615,12 +704,12 @@ Description of the interface.
    usage.
 
 
- set(SCREEN,KEY,VALUE)
+ set(SCREEN,KEY,VALUE,...)
 
    To set key KEY of screen SCREEN equal to VALUE. Example:
 
       $wizard->set("NUMBERS",HEADER,"This is the new header");
-  
+
    sets the HEADER of screen NUMBERS to a new value.
 
       $wizard->set("NUMBERS","ADOUBLE",999.999);
@@ -633,7 +722,15 @@ Description of the interface.
         $scr->set("GETALLEN","ADOUBLE",999.99);
         $scr->set("PROCES",READONLY,1);
         $scr->set("PROCES",HEADER,"proces scherm is read only nu");
-        $scr->set("GETALLEN",PROMPTS,ANINT,READONLY,1);      
+        $scr->set("GETALLEN",PROMPTS,ANINT,READONLY,1);
+
+ get(SCREEN,KEY,...)
+
+    To get the value of key KEY of screen SCREEN. Example:
+    
+       $wizard->get(NUMBERS,HEADER);
+       $wizard->get(NUMBERS,PROMPTS,ANINT,PROMPT);
+       
 
  wizard([screens])
 
