@@ -1,3 +1,6 @@
+0.49 -- Fixed a bug. Makefile.PL should now require Term::Screen::ReadLine
+        to be at least version 0.33.
+
 0.48 -- Fixed a bug. The Esc, F1, F3 (previous screen) key should work; 
         also when the validator function returns 'false'.
 
