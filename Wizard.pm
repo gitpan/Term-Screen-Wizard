@@ -1,13 +1,13 @@
 package Term::Screen::Wizard;
 
-use strict;
+#use strict;
 use base qw(Term::Screen::ReadLine);
 use Term::Screen::ReadLine;
 
 use vars qw($VERSION);
 
 BEGIN {
-  $VERSION=0.45;
+  $VERSION=0.46;
 }
 
 sub add_screen {
@@ -26,6 +26,7 @@ sub add_screen {
     ROW       => 2,
     COL       => 2,
     PROMPTS   => undef,
+    READONLY  => undef,
     @_,
   };
 
@@ -131,7 +132,7 @@ sub wizard {
     $what=$self->_display_screen($scr);
 
     if ($what eq "previous") {
-      $i-- unless $i=0;
+      if ($i >0) { $i-=1; }
     }
     elsif ($what eq "next") {
       $i++;
@@ -152,16 +153,19 @@ sub wizard {
 	  last;
         }
       }
+
       my $prompt;
+
+      if ($scr->{NOFINISH}) {
+        $what="next";
+      }
+      else {
+        $what="finish";
+      }
+
       foreach $prompt (@{ $scr->{PROMPTS} }) {
 	$prompt->{VALUE}=$prompt->{NEWVALUE};
 	$prompt->{NEWVALUE}=undef;
-	if ($prompt->{NOFINISH}) {
-	  $what="next";
-	}
-	else {
-	  $what="finish";
-	}
       }
     }
   }
@@ -185,6 +189,7 @@ sub _display_screen {
   my $convert;
   my $dashes;
   my %keys;
+  my $valid;
 
 
   %keys = ( "esc"	=> 1,
@@ -252,8 +257,7 @@ sub _display_screen {
       my $L=length $val;
 
       if ($prompt->{PASSWORD}) {
-	 $val="";
-	 for(1..$L) { $val.="*"; }
+         $val=$self->setstr("*",$L);
       }
 
       if ($L>$displen) { $L=$displen; }
@@ -282,6 +286,13 @@ sub _display_screen {
 	$convert=undef;
       }
 
+      my $readonly=$scr->{READONLY};
+      if (not defined $readonly) { 
+        $readonly=$prompts[$i]->{READONLY};
+      }
+
+      #$self->at($i+3,$promptlen)->puts($prompts[$i]->{NOCOMMIT})->getch();
+
       $line=$self->readline(ROW => $i+3, COL => $promptlen,
 			    LEN => $prompts[$i]->{LEN},
 			    DISPLAYLEN => $displen,
@@ -290,22 +301,38 @@ sub _display_screen {
 			    ONLYVALID => $only,
 			    CONVERT => $convert,
 			    PASSWORD => $prompts[$i]->{PASSWORD},
+			    NOCOMMIT => $prompts[$i]->{NOCOMMIT},
+			    READONLY => $readonly,
 			   );
 
       {my $L=length $line;
        my $val=$line;
 	 if ($L>$displen) { $L=$displen; }
 	 if ($prompts[$i]->{PASSWORD}) {
-	   for(1..$L) {
-	     $val.="*";
-	   }
+           $val=$self->setstr("*",$L);
 	 }
 	 $val=substr($val,0,$L);
 	 $self->at($i+3,$promptlen)->puts($val);
       }
 
-      $prompts[$i]->{NEWVALUE}=$line;
-      $key=$self->lastkey();
+      if (exists $prompts[$i]->{VALIDATOR}) {
+        my $expr=$prompts[$i]->{VALIDATOR};
+        if (not $expr=~/::/) { $expr="::".$expr; }
+        #$self->at(20,0)->puts($expr)->getch();
+        $valid=&$expr($line);
+        #$self->at(21,0)->puts($valid)->getch();
+      }
+      else {
+        $valid=1;
+      }
+  
+      if ($valid) {
+        $prompts[$i]->{NEWVALUE}=$line;
+        $key=$self->lastkey();
+      }
+      else {
+        $key="";
+      }
 
       if ($key eq "tab" or $key eq "enter" or $key eq "kd") {
 	$i+=1;
@@ -343,7 +370,26 @@ sub set {
   my $id     = shift;
 
   if (exists $scr->{$id}) {
-    $scr->{$id}=shift;
+    if ($id eq "PROMPTS") {
+     my $key=shift;
+     my $found=0;
+     my @prompts=@{$scr->{PROMPTS}};
+     my $prompt;
+      foreach $prompt (@prompts) {
+        if ($prompt->{KEY} eq $key) {
+         my $id=shift;
+         my $val=shift;
+          $found=1;
+          $prompt->{$id}=$val;
+        }
+      }
+      if (not $found) {
+        die "Can't find key <$key> in prompts of screen\n";
+      }
+    }
+    else {
+      $scr->{$id}=shift;
+    }
   }
   else {
     my $found=0;
@@ -500,6 +546,7 @@ Description of the interface.
     HELPTEXT  => <text to put on your helpscreen>
     NOFINISH  => <1/0 - Inidicates that this wizard is/is not (1/0) part
 			of an ongoing 'wizard sequence'>
+    READONLY  => <1/0 - read only option to get a read only screen>
     PROMPTS   => <array of fields to input>
  )
 
@@ -513,9 +560,17 @@ Description of the interface.
    call the next sequence of screens.
 
 	   PROMPTS => [
-	     { KEY => "ANINT",	   PROMPT => "INT",	LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
+	     { KEY => "ANINT",	   PROMPT => "INT",	LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*", READONLY => 1 },
 	     { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
+	     { KEY => "DATE",  PROMPT => "DATE",  LEN => 8, CONVERT => "up", ONLYVALID => "[0-9]+", VALIDATOR => "ValidateCCYYMMDD" },
 	   ]
+
+     sub ValidateCCYYMMDD {
+       my $line=shift;
+       (...)
+
+       return <1/0>
+     }
 
   Note the entries in PROMPTS :
 
@@ -529,6 +584,9 @@ Description of the interface.
 		 done.
      VALUE	 a default value to use. This value will change if the
 		 wizard is used.
+     VALIDATOR   a validator sub to validate a line of input, after it has
+                 been inputted.
+     READONLY    Set this prompt readonly.
 
 
  del_screen(<name>)
@@ -560,6 +618,13 @@ Description of the interface.
 
    sets the prompt ADOUBLE of screen NUMBERS to 999.999
 
+   More examples:
+
+        $scr->set("GETALLEN",HEADER,"dit is de header");
+        $scr->set("GETALLEN","ADOUBLE",999.99);
+        $scr->set("PROCES",READONLY,1);
+        $scr->set("PROCES",HEADER,"proces scherm is read only nu");
+        $scr->set("GETALLEN",PROMPTS,ANINT,READONLY,1);      
 
  wizard([screens])
 

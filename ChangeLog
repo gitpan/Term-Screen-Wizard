@@ -1,3 +1,8 @@
+0.46 -- Removed a bug. When the user inputs a password, after the
+        user leaves the field, the password isn't starred out.
+     -- A validator function has been added to validate a field().
+     -- A readonly option has been added to a screen.
+
 0.45 -- Removed a bug. When the wizard was called with specific screens,
         all variables were cleared. This has been corrected.
      -- Removed function get_screen() (this has become an internal 

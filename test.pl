@@ -32,7 +32,7 @@ $scr->add_screen(
       FINISH => "Ctrl-Enter - Klaar",
       PROMPTS => [
          { KEY => "PROCESID", PROMPT => "Proces Id", LEN=>32, VALUE=>"123456789.00.04" , ONLYVALID => "[a-zA-Z0-9.]*" },
-         { KEY => "TYPE", PROMPT => "Intern of Extern Proces (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*" },
+         { KEY => "TYPE", PROMPT => "Intern of Extern Proces (I/E)", CONVERT => "up", LEN=>1, ONLYVALID=>"[ieIE]*", NOCOMMIT=>1 },
          { KEY => "OMSCHRIJVING", PROMPT => "Beschrijving Proces", LEN=>75 },
          { KEY => "PASSWORD", PROMPT => "Enter a password", LEN=>14, PASSWORD=>1 }
                 ],
@@ -77,6 +77,7 @@ $scr->add_screen(
    PROMPTS => [
      { KEY => "ANINT",     PROMPT => "INT",     LEN => 10, CONVERT => "up", ONLYVALID => "[0-9]*" },
      { KEY => "ADOUBLE",  PROMPT => "DOUBLE",  LEN => 16, CONVERT => "up", ONLYVALID => "[0-9]+([.,][0-9]*)?" },
+     { KEY => "DATUM",  PROMPT => "DATUM",  LEN => 8, CONVERT => "up", ONLYVALID => "[0-9]+", VALIDATOR => "valdate" },
    ],
 );
 
@@ -90,6 +91,9 @@ $tst++;
 #$scr1->{HEADER}="This header has been renewed";
 $scr->set("GETALLEN",HEADER,"dit is de header");
 $scr->set("GETALLEN","ADOUBLE",999.99);
+$scr->set("PROCES",READONLY,1);
+$scr->set("PROCES",HEADER,"proces scherm is read only nu");
+$scr->set("GETALLEN",PROMPTS,ANINT,READONLY,1);
 #$scr->set("GETALLEN","HANS",32232);
 
 $scr->puts("Only PROCES and GETALLEN")->getch();
@@ -130,6 +134,11 @@ print "ok $tst\n";
 $tst++;
 
 ##############################################################################
+
+sub valdate {
+  $scr->at(21,0)->puts("in functie valdate");
+return 1;
+}
 
 exit;
 
